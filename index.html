@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PDV</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+:root{--bg:#0f1115;--side:#151821;--card:#1b1f2a;--line:#2a3040;--txt:#e8eaf0;--mut:#8b93a7;--acc:#f5a524;--red:#e5484d}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:system-ui,Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--txt);display:flex}
+aside{width:250px;background:var(--side);border-right:1px solid var(--line);display:flex;flex-direction:column;padding:18px 14px;gap:10px;flex-shrink:0}
+.logo{display:flex;align-items:center;gap:10px;padding:4px 6px 16px;border-bottom:1px solid var(--line);margin-bottom:8px}
+.logo span{font-size:30px;font-weight:800;letter-spacing:3px;color:var(--acc)}
+.nav{background:transparent;color:var(--txt);border:1px solid var(--line);border-radius:10px;padding:13px 12px;font-size:13px;font-weight:700;letter-spacing:.5px;text-align:left;cursor:pointer}
+.nav:hover{background:var(--card)}
+.nav.on{background:var(--acc);color:#111;border-color:var(--acc)}
+.sair{margin-top:auto;border-color:var(--red);color:var(--red)}
+.sair:hover{background:var(--red);color:#fff}
+main{flex:1;padding:32px;overflow:auto}
+h1{font-size:22px;margin-bottom:20px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px;max-width:640px}
+label{display:block;font-size:12px;color:var(--mut);margin:0 0 6px;text-transform:uppercase;letter-spacing:.6px}
+input,select{width:100%;background:var(--bg);color:var(--txt);border:1px solid var(--line);border-radius:10px;padding:12px;font-size:15px;margin-bottom:16px}
+input:focus,select:focus{outline:2px solid var(--acc);border-color:transparent}
+input[readonly]{color:var(--mut)}
+.btn{background:var(--acc);color:#111;border:0;border-radius:10px;padding:12px 20px;font-size:14px;font-weight:800;cursor:pointer}
+.btn:hover{filter:brightness(1.1)}
+.msg{margin-top:12px;font-size:13px;min-height:18px}
+.err{color:var(--red)}.ok{color:#46c37b}
+ul{list-style:none;margin-top:20px}
+li{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border:1px solid var(--line);border-radius:10px;margin-bottom:8px;background:var(--bg)}
+li button{background:none;border:0;color:var(--red);cursor:pointer;font-size:13px;font-weight:700}
+.hide{display:none}
+#acoes{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+#acoes.hide{display:none}
+#acoes .btn{flex:1;min-width:120px}
+#fim{position:fixed;inset:0;background:var(--bg);display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:9}
+#fim.on{display:flex}
+@media(max-width:700px){body{flex-direction:column}aside{width:100%;flex-direction:row;flex-wrap:wrap;padding:10px}.logo{border:0;padding:0;width:100%}.sair{margin-top:0}main{padding:18px}}
+</style>
+</head>
+<body>
+<aside>
+  <div class="logo">
+    <svg width="62" height="52" viewBox="0 0 62 52" aria-label="Caminhão de frente">
+      <rect x="9" y="4" width="44" height="34" rx="6" fill="#f5a524"/>
+      <rect x="14" y="9" width="34" height="13" rx="3" fill="#0f1115"/>
+      <rect x="29" y="9" width="4" height="13" fill="#f5a524"/>
+      <rect x="15" y="26" width="32" height="9" rx="2" fill="#151821"/>
+      <path d="M19 28v5M24 28v5M29 28v5M34 28v5M39 28v5M44 28v5" stroke="#f5a524" stroke-width="1.5"/>
+      <circle cx="12" cy="31" r="3" fill="#fff"/><circle cx="50" cy="31" r="3" fill="#fff"/>
+      <rect x="3" y="10" width="5" height="14" rx="2" fill="#8b93a7"/><rect x="54" y="10" width="5" height="14" rx="2" fill="#8b93a7"/>
+      <rect x="7" y="38" width="48" height="5" rx="2" fill="#8b93a7"/>
+      <rect x="10" y="42" width="10" height="10" rx="2" fill="#333a4d"/><rect x="42" y="42" width="10" height="10" rx="2" fill="#333a4d"/>
+    </svg>
+    <span>PDV</span>
+  </div>
+  <button class="nav on" id="nCad" onclick="tela('cad')">CADASTRO DE MOTORISTA</button>
+  <button class="nav" id="nEmi" onclick="tela('emi')">EMISSÃO DE PDV</button>
+  <button class="nav sair" onclick="sair()">SAIR DO APP</button>
+</aside>
+
+<main>
+  <section id="cad">
+    <h1>Cadastro de Motorista</h1>
+    <div class="card">
+      <label for="nome">Nome do motorista</label>
+      <input id="nome" placeholder="Digite o nome completo" onkeydown="if(event.key==='Enter')add()">
+      <button class="btn" onclick="add()">CADASTRAR</button>
+      <div class="msg" id="mCad"></div>
+      <ul id="lista"></ul>
+    </div>
+  </section>
+
+  <section id="emi" class="hide">
+    <h1>Emissão de PDV</h1>
+    <div class="card">
+      <label for="mot">Motorista</label>
+      <select id="mot"></select>
+      <label for="data">Data</label>
+      <input id="data" readonly>
+      <button class="btn" onclick="gerar()">GERAR PDV</button>
+      <div class="msg" id="mEmi"></div>
+      <div id="acoes" class="hide">
+        <button class="btn" onclick="visualizar()">VISUALIZAR</button>
+        <button class="btn" onclick="imprimir()">IMPRIMIR</button>
+        <button class="btn" onclick="baixar()">BAIXAR</button>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div id="fim"><div style="font-size:20px">Você saiu do app.</div><button class="btn" onclick="document.getElementById('fim').classList.remove('on')">ENTRAR NOVAMENTE</button></div>
+
+<script>
+const KEY='pdv_motoristas';
+const PADRAO=['ISAIAS SESINO','ALYSSON FERREIRA','AGENOR CALADO','NILSON JOSÉ','PABLO PITA','HELTON SALUSTIANO','JAMERSON SALUSTIANO','WELLINGTON GEORGE','MARCELO ARAÚJO'];
+let mots=[...PADRAO];
+try{const s=localStorage.getItem(KEY);if(s!==null)mots=JSON.parse(s);else localStorage.setItem(KEY,JSON.stringify(mots))}catch(e){}
+const $=id=>document.getElementById(id);
+function salvar(){try{localStorage.setItem(KEY,JSON.stringify(mots))}catch(e){}}
+function hoje(){return new Date().toLocaleDateString('pt-BR')}
+function msg(id,t,c){const e=$(id);e.textContent=t;e.className='msg '+(c||'')}
+
+function tela(t){
+  $('cad').classList.toggle('hide',t!=='cad');
+  $('emi').classList.toggle('hide',t!=='emi');
+  $('nCad').classList.toggle('on',t==='cad');
+  $('nEmi').classList.toggle('on',t==='emi');
+  if(t==='emi'){$('data').value=hoje();opcoes();msg('mEmi','');$('acoes').classList.add('hide')}
+}
+function render(){
+  $('lista').innerHTML=mots.map((m,i)=>`<li><span></span><button onclick="del(${i})">EXCLUIR</button></li>`).join('');
+  [...$('lista').children].forEach((li,i)=>li.firstChild.textContent=mots[i]);
+}
+function opcoes(){
+  const s=$('mot');
+  s.innerHTML='<option value="">Selecione um motorista cadastrado</option>';
+  [...mots].sort((a,b)=>a.localeCompare(b,'pt-BR')).forEach(m=>{const o=document.createElement('option');o.value=m;o.textContent=m;s.appendChild(o)});
+}
+function add(){
+  const n=$('nome').value.trim().replace(/\s+/g,' ');
+  if(!n){msg('mCad','Informe o nome do motorista.','err');return}
+  if(mots.some(m=>m.toLowerCase()===n.toLowerCase())){msg('mCad','Esse motorista já está cadastrado.','err');return}
+  mots.push(n);salvar();render();$('nome').value='';msg('mCad','Motorista cadastrado!','ok');
+}
+function del(i){if(confirm('Excluir o motorista "'+mots[i]+'"?')){mots.splice(i,1);salvar();render();opcoes()}}
+function sair(){if(confirm('Deseja sair do app?')){try{window.close()}catch(e){}$('fim').classList.add('on')}}
+
+/* ---- PDF: dois formulários por folha A4 (modelo NOVO_PDV) ---- */
+function form(doc,y0,motorista,data){
+  const L=8,W=194;
+  doc.setDrawColor(0);doc.setLineWidth(.3);doc.setTextColor(0);
+  doc.setFont('helvetica','bold');doc.setFontSize(9);
+  doc.text('MOTORISTA:',L,y0+5);doc.setFont('helvetica','normal');doc.text(motorista,L+23,y0+5);
+  doc.line(L+22,y0+6,L+105,y0+6);
+  doc.setFont('helvetica','bold');doc.text('FROTA:',L+108,y0+5);doc.line(L+121,y0+6,L+150,y0+6);
+  doc.text('DATA:',L+154,y0+5);doc.line(L+165,y0+6,L+W,y0+6);
+  doc.text('KM INICIAL:',L,y0+12);doc.line(L+22,y0+13,L+62,y0+13);
+  doc.text('KM FINAL:',L+66,y0+12);doc.line(L+83,y0+13,L+120,y0+13);
+  doc.text('ENTREGA:',L+126,y0+12);doc.setFont('helvetica','normal');doc.text(data,L+143,y0+12);doc.line(L+142,y0+13,L+W,y0+13);
+
+  const cols=[['N° OTR',16],['TIPO D/F',14],['CX\nRETIRADA',17],['CX\nATUAL',15],['TIPO DE\nRESÍDUO',28],['DESTINO',30],['CLIENTE/OBRA',42],['HR\nCHEGADA',16],['HR\nSAIDA',16]];
+  const ty=y0+17,hh=10,rh=8.5,rows=9;
+  doc.setFontSize(6.5);
+  let x=L;
+  cols.forEach(([t,w])=>{
+    doc.rect(x,ty,w,hh);
+    doc.text(t.split('\n'),x+w/2,ty+(t.includes('\n')?4:6),{align:'center'});
+    for(let r=0;r<rows;r++)doc.rect(x,ty+hh+r*rh,w,rh);
+    x+=w;
+  });
+  let y=ty+hh+rows*rh+7;
+  doc.setFontSize(9);
+  doc.text('OCORRÊNCIAS:',L,y);doc.line(L+27,y+.5,L+W,y+.5);
+  doc.line(L,y+7,L+W,y+7);
+  y+=15;
+  doc.text('Parada p/ almoço: ______:______   Retorno: ______:______',L,y);
+  doc.text('Fim de Expediente: ______:______',L+120,y);
+  y+=10;
+  doc.line(L+8,y,L+80,y);doc.line(L+112,y,L+184,y);
+  doc.setFontSize(8);
+  doc.text('Assinatura MOTORISTA',L+44,y+4,{align:'center'});
+  doc.text('Assinatura CONFERENTE',L+148,y+4,{align:'center'});
+}
+function gerar(){
+  const m=$('mot').value;
+  if(!mots.length){msg('mEmi','Nenhum motorista cadastrado. Cadastre primeiro.','err');return}
+  if(!m||!mots.includes(m)){msg('mEmi','Selecione um motorista cadastrado.','err');return}
+  if(!window.jspdf){msg('mEmi','Biblioteca de PDF não carregada. Verifique a internet.','err');return}
+  const d=hoje();$('data').value=d;
+  const doc=new window.jspdf.jsPDF({unit:'mm',format:'a4',orientation:'portrait'});
+  form(doc,8,m,d);
+  doc.setLineDashPattern([1.5,1.5],0);doc.line(8,148,202,148);doc.setLineDashPattern([],0);
+  form(doc,154,m,d);
+  atual={doc,nome:'PDV_'+m.replace(/\s+/g,'_')+'_'+d.replace(/\//g,'-')+'.pdf'};
+  $('acoes').classList.remove('hide');
+  msg('mEmi','PDV gerado para '+m+'. Escolha: visualizar, imprimir ou baixar.','ok');
+}
+let atual=null;
+function url(){return URL.createObjectURL(atual.doc.output('blob'))}
+function visualizar(){
+  if(!atual)return;
+  if(!window.open(url(),'_blank'))msg('mEmi','Permita pop-ups para visualizar o PDF.','err');
+}
+function imprimir(){
+  if(!atual)return;
+  const u=url();
+  try{
+    const f=document.createElement('iframe');
+    f.style.cssText='position:fixed;width:0;height:0;border:0;right:0;bottom:0';
+    f.src=u;
+    f.onload=()=>{try{f.contentWindow.focus();f.contentWindow.print()}catch(e){window.open(u,'_blank')}};
+    document.body.appendChild(f);
+    setTimeout(()=>f.remove(),60000);
+  }catch(e){window.open(u,'_blank')}
+}
+function baixar(){if(atual)atual.doc.save(atual.nome)}
+render();
+</script>
+</body>
+</html>
